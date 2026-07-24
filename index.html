@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Sudoku</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        /* Board fits the viewport minus the header / toolbar / pad chrome. */
+        --board: min(92vw, calc(100dvh - 345px), 460px);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 12px;
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+        background: radial-gradient(circle at 50% 0%, #1b2a4a 0%, #0a0f1e 60%);
+        color: #e8eefc;
+        user-select: none;
+        -webkit-user-select: none;
+        padding: 16px 12px 24px;
+        overscroll-behavior: none;
+      }
+      h1 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 6px;
+        text-transform: uppercase;
+        color: #9fd0ff;
+      }
+
+      .panel {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 20px;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 10px 16px;
+        background: rgba(20, 30, 54, 0.6);
+        border: 1px solid rgba(159, 208, 255, 0.15);
+        border-radius: 12px;
+      }
+      .group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        align-items: flex-start;
+      }
+      .group .label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1.4px;
+        color: #7d8bab;
+      }
+      .seg {
+        display: inline-flex;
+        background: #101a30;
+        border-radius: 8px;
+        padding: 3px;
+        gap: 3px;
+      }
+      .seg button {
+        appearance: none;
+        border: none;
+        background: transparent;
+        color: #aebbd6;
+        font: inherit;
+        font-size: 13px;
+        padding: 5px 13px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.12s, color 0.12s;
+      }
+      .seg button:hover {
+        color: #e8eefc;
+      }
+      .seg button.active {
+        background: #3a6df0;
+        color: #ffffff;
+      }
+
+      .toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .badge {
+        font-size: 15px;
+        font-weight: 600;
+        color: #cfe0ff;
+        min-width: 62px;
+        text-align: center;
+      }
+      .badge.status.win {
+        color: #8effc4;
+      }
+      .ctrl-btn {
+        appearance: none;
+        border: 1px solid rgba(159, 208, 255, 0.25);
+        background: #1a2848;
+        color: #dce7ff;
+        font: inherit;
+        font-size: 14px;
+        padding: 8px 16px;
+        border-radius: 9px;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+      .ctrl-btn:hover {
+        background: #223662;
+      }
+
+      /* Board */
+      .board {
+        display: grid;
+        grid-template-columns: repeat(9, 1fr);
+        grid-template-rows: repeat(9, 1fr);
+        width: var(--board);
+        aspect-ratio: 1 / 1;
+        border: 3px solid #5578b8;
+        border-radius: 6px;
+        background: #0f1a30;
+        overflow: hidden;
+      }
+      .cell {
+        appearance: none;
+        margin: 0;
+        border: none;
+        border-right: 1px solid rgba(159, 208, 255, 0.12);
+        border-bottom: 1px solid rgba(159, 208, 255, 0.12);
+        background: transparent;
+        color: #7fb3ff;
+        font-family: inherit;
+        font-size: clamp(16px, 5.2vw, 30px);
+        font-weight: 600;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        touch-action: manipulation;
+      }
+      .cell.col-last {
+        border-right: none;
+      }
+      .cell.row-last {
+        border-bottom: none;
+      }
+      .cell.box-right {
+        border-right: 2px solid #5578b8;
+      }
+      .cell.box-bottom {
+        border-bottom: 2px solid #5578b8;
+      }
+      .cell.given {
+        color: #e8eefc;
+        font-weight: 800;
+      }
+      .cell.peer {
+        background: rgba(90, 130, 240, 0.14);
+      }
+      .cell.same {
+        background: rgba(142, 255, 196, 0.16);
+      }
+      .cell.selected {
+        background: rgba(90, 130, 240, 0.4);
+      }
+      .cell.conflict {
+        color: #ff6b6b;
+        background: rgba(255, 80, 80, 0.18);
+      }
+      .cell.done {
+        color: #8effc4;
+      }
+      .cell.done.given {
+        color: #cfeede;
+      }
+
+      /* Number pad */
+      .pad {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 7px;
+        width: var(--board);
+      }
+      .pad-btn {
+        appearance: none;
+        border: 1px solid rgba(159, 208, 255, 0.2);
+        background: #16233f;
+        color: #dce7ff;
+        font: inherit;
+        font-size: 20px;
+        font-weight: 600;
+        padding: 12px 0;
+        border-radius: 10px;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+      .pad-btn:hover {
+        background: #1f3157;
+      }
+      .pad-btn:active {
+        transform: translateY(1px);
+      }
+      .pad-btn.erase {
+        color: #ff9f9f;
+      }
+
+      @media (max-width: 640px) {
+        :root {
+          --board: min(94vw, calc(100dvh - 315px), 460px);
+        }
+        body {
+          padding: 12px 10px 20px;
+          gap: 10px;
+        }
+        h1 {
+          font-size: 17px;
+          letter-spacing: 4px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Sudoku</h1>
+
+    <div class="panel">
+      <div class="group">
+        <span class="label">Difficulty</span>
+        <div class="seg" id="difficulty">
+          <button data-diff="easy" class="active">Easy</button>
+          <button data-diff="medium">Medium</button>
+          <button data-diff="hard">Hard</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <span class="badge">⏱ <span id="timer">0:00</span></span>
+      <span class="badge status" id="status-text">0 / 81</span>
+      <button id="btn-new" class="ctrl-btn">New Puzzle</button>
+    </div>
+
+    <div class="board" id="board"></div>
+    <div class="pad" id="pad"></div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
