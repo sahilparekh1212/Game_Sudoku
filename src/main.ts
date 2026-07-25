@@ -1,4 +1,5 @@
 import { Sudoku, type Difficulty } from "./game.ts";
+import { fetchSudokuHint } from "./hints.ts";
 
 const game = new Sudoku();
 // Expose a handle for debugging in the console (harmless in production).
@@ -8,6 +9,11 @@ const boardEl = document.getElementById("board") as HTMLDivElement;
 const padEl = document.getElementById("pad") as HTMLDivElement;
 const statusEl = document.getElementById("status-text") as HTMLElement;
 const timerEl = document.getElementById("timer") as HTMLElement;
+
+const hintBtn = document.getElementById("btn-hint") as HTMLButtonElement;
+const hintOverlay = document.getElementById("hint-overlay") as HTMLElement;
+const hintBody = document.getElementById("hint-body") as HTMLElement;
+let hintsEnabled = localStorage.getItem("sudoku:hints") === "on";
 
 let selected = -1;
 let startTime = 0;
@@ -86,7 +92,58 @@ function render(): void {
 
   statusEl.textContent = solved ? "Solved! 🎉" : `${game.filledCount()} / 81`;
   statusEl.classList.toggle("win", solved);
+  updateHintButton();
 }
+
+// ---- Hints -----------------------------------------------------------------
+
+/** Show/enable the hint button per the toggle and puzzle state. */
+function updateHintButton(): void {
+  hintBtn.hidden = !hintsEnabled;
+  if (!hintsEnabled) return;
+  hintBtn.disabled = solved;
+}
+
+function openHint(text: string, loading = false): void {
+  hintBody.textContent = text;
+  hintBody.classList.toggle("loading", loading);
+  hintOverlay.hidden = false;
+}
+
+function closeHint(): void {
+  hintOverlay.hidden = true;
+}
+
+let hintPending = false;
+async function requestHint(): Promise<void> {
+  if (hintPending || solved) return;
+  const h = game.hint();
+  if (!h) return;
+  hintPending = true;
+  hintBtn.disabled = true;
+  selectCell(h.index); // highlight the cell the hint is about
+  openHint("Thinking…", true);
+  try {
+    const text = await fetchSudokuHint({
+      cells: game.cells,
+      index: h.index,
+      value: h.value,
+      technique: h.technique,
+    });
+    openHint(text);
+  } catch {
+    openHint("Sorry — couldn't fetch a hint. Check the connection and try again.");
+  } finally {
+    hintPending = false;
+    updateHintButton();
+  }
+}
+
+hintBtn.addEventListener("click", () => void requestHint());
+document.getElementById("hint-close")?.addEventListener("click", closeHint);
+hintOverlay.addEventListener("click", (e) => {
+  if (e.target === hintOverlay) closeHint(); // click the backdrop to dismiss
+});
 
 // ---- Timer -----------------------------------------------------------------
 
@@ -154,5 +211,23 @@ document.getElementById("btn-new")?.addEventListener("click", () => {
   newGame();
   (document.activeElement as HTMLElement | null)?.blur();
 });
+
+const hintsSeg = document.getElementById("hints") as HTMLElement;
+hintsSeg.addEventListener("click", (e) => {
+  const btn = (e.target as HTMLElement).closest("button");
+  if (!btn || !hintsSeg.contains(btn)) return;
+  for (const child of Array.from(hintsSeg.children)) child.classList.toggle("active", child === btn);
+  hintsEnabled = btn.dataset.hints === "on";
+  localStorage.setItem("sudoku:hints", hintsEnabled ? "on" : "off");
+  if (!hintsEnabled) closeHint();
+  updateHintButton();
+  (document.activeElement as HTMLElement | null)?.blur();
+});
+
+// Reflect the persisted hints toggle in its segmented control on load.
+for (const child of Array.from(hintsSeg.children)) {
+  const el = child as HTMLElement;
+  el.classList.toggle("active", el.dataset.hints === (hintsEnabled ? "on" : "off"));
+}
 
 newGame();

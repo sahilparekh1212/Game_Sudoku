@@ -122,6 +122,61 @@
         background: #223662;
       }
 
+      /* Hint button + modal */
+      .ctrl-btn.hint {
+        border-color: rgba(255, 209, 102, 0.4);
+        color: #ffe6a3;
+      }
+      .ctrl-btn.hint:hover {
+        background: #2a2a1c;
+      }
+      .ctrl-btn.hint:disabled {
+        opacity: 0.55;
+        cursor: default;
+      }
+      .hint-overlay {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(6, 10, 22, 0.72);
+        z-index: 20;
+        padding: 20px;
+      }
+      .hint-overlay[hidden] {
+        display: none;
+      }
+      .hint-card {
+        background: #141f38;
+        border: 1px solid rgba(255, 209, 102, 0.3);
+        border-radius: 14px;
+        padding: 20px 22px;
+        max-width: 360px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        text-align: center;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+      }
+      .hint-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #ffd166;
+      }
+      .hint-body {
+        font-size: 15px;
+        line-height: 1.5;
+        color: #dce7ff;
+        min-height: 42px;
+        user-select: text;
+        -webkit-user-select: text;
+      }
+      .hint-body.loading {
+        color: #8ea3c8;
+      }
+
       /* Board */
       .board {
         display: grid;
@@ -245,16 +300,33 @@
           <button data-diff="hard">Hard</button>
         </div>
       </div>
+
+      <div class="group">
+        <span class="label">Hints</span>
+        <div class="seg" id="hints">
+          <button data-hints="on">On</button>
+          <button data-hints="off" class="active">Off</button>
+        </div>
+      </div>
     </div>
 
     <div class="toolbar">
       <span class="badge">⏱ <span id="timer">0:00</span></span>
       <span class="badge status" id="status-text">0 / 81</span>
       <button id="btn-new" class="ctrl-btn">New Puzzle</button>
+      <button id="btn-hint" class="ctrl-btn hint" hidden>💡 Hint</button>
     </div>
 
     <div class="board" id="board"></div>
     <div class="pad" id="pad"></div>
+
+    <div class="hint-overlay" id="hint-overlay" hidden>
+      <div class="hint-card">
+        <div class="hint-title">💡 Hint</div>
+        <div class="hint-body" id="hint-body"></div>
+        <button id="hint-close" class="ctrl-btn">Got it</button>
+      </div>
+    </div>
 
     <script type="module" src="/src/main.ts"></script>
   </body>

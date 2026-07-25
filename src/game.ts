@@ -5,6 +5,14 @@
 
 export type Difficulty = "easy" | "medium" | "hard";
 
+/** The deduction that justifies a hinted cell (drives the coach's explanation). */
+export type Technique = "naked" | "hidden-row" | "hidden-col" | "hidden-box" | "reveal";
+export interface SudokuHint {
+  index: number;
+  value: number;
+  technique: Technique;
+}
+
 /** How many of the 81 cells to try to blank out per difficulty. */
 const REMOVALS: Record<Difficulty, number> = {
   easy: 44,
@@ -81,6 +89,81 @@ export class Sudoku {
       }
     }
     return bad;
+  }
+
+  // ---- Hints ---------------------------------------------------------------
+
+  /** Candidate digits that could legally go in empty cell `i` right now. */
+  private candidates(i: number): number[] {
+    const r = Math.floor(i / 9);
+    const c = i % 9;
+    const used = new Set<number>();
+    for (let k = 0; k < 9; k++) {
+      used.add(this.cells[r * 9 + k]);
+      used.add(this.cells[k * 9 + c]);
+    }
+    const br = Math.floor(r / 3) * 3;
+    const bc = Math.floor(c / 3) * 3;
+    for (let a = 0; a < 3; a++) for (let b = 0; b < 3; b++) used.add(this.cells[(br + a) * 9 + (bc + b)]);
+    const out: number[] = [];
+    for (let n = 1; n <= 9; n++) if (!used.has(n)) out.push(n);
+    return out;
+  }
+
+  /**
+   * Pick the next cell to reveal, preferring a genuinely deducible one:
+   *   naked single  → only one digit fits the cell
+   *   hidden single → a digit fits only one cell in its row/column/box
+   * Falls back to revealing a correct cell from the solution. Every returned
+   * value is cross-checked against the solution, so a hint is always correct
+   * even if the player has entered wrong digits.
+   */
+  hint(): SudokuHint | null {
+    if (this.isSolved()) return null;
+    const empties: number[] = [];
+    for (let i = 0; i < 81; i++) if (this.cells[i] === 0) empties.push(i);
+    if (empties.length === 0) return null;
+
+    // 1. Naked single.
+    for (const i of empties) {
+      const cs = this.candidates(i);
+      if (cs.length === 1 && cs[0] === this.solution[i]) {
+        return { index: i, value: cs[0], technique: "naked" };
+      }
+    }
+
+    // 2. Hidden single within a unit (row / column / box).
+    const inUnit = (idxs: number[], technique: Technique): SudokuHint | null => {
+      for (let n = 1; n <= 9; n++) {
+        if (idxs.some((i) => this.cells[i] === n)) continue; // already placed
+        const spots = idxs.filter((i) => this.cells[i] === 0 && this.candidates(i).includes(n));
+        if (spots.length === 1 && this.solution[spots[0]] === n) {
+          return { index: spots[0], value: n, technique };
+        }
+      }
+      return null;
+    };
+    for (let r = 0; r < 9; r++) {
+      const hit = inUnit(Array.from({ length: 9 }, (_, c) => r * 9 + c), "hidden-row");
+      if (hit) return hit;
+    }
+    for (let c = 0; c < 9; c++) {
+      const hit = inUnit(Array.from({ length: 9 }, (_, r) => r * 9 + c), "hidden-col");
+      if (hit) return hit;
+    }
+    for (let br = 0; br < 3; br++) {
+      for (let bc = 0; bc < 3; bc++) {
+        const g: number[] = [];
+        for (let a = 0; a < 3; a++) for (let b = 0; b < 3; b++) g.push((br * 3 + a) * 9 + (bc * 3 + b));
+        const hit = inUnit(g, "hidden-box");
+        if (hit) return hit;
+      }
+    }
+
+    // 3. Fallback: reveal a correct cell (prefer one not currently in conflict).
+    const conflicts = this.conflicts();
+    const clean = empties.find((i) => !conflicts[i]) ?? empties[0];
+    return { index: clean, value: this.solution[clean], technique: "reveal" };
   }
 
   // ---- Generation ----------------------------------------------------------
