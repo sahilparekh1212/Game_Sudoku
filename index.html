@@ -13,6 +13,10 @@
         /* Board fits the viewport minus the header / toolbar / pad chrome. */
         --board: min(92vw, calc(100dvh - 345px), 460px);
       }
+      /* Reserve extra height for the hint bar so nothing gets clipped */
+      body.hints-on {
+        --board: min(92vw, calc(100dvh - 425px), 460px);
+      }
       * {
         box-sizing: border-box;
       }
@@ -122,58 +126,45 @@
         background: #223662;
       }
 
-      /* Hint button + modal */
-      .ctrl-btn.hint {
-        border-color: rgba(255, 209, 102, 0.4);
-        color: #ffe6a3;
-      }
-      .ctrl-btn.hint:hover {
-        background: #2a2a1c;
-      }
-      .ctrl-btn.hint:disabled {
-        opacity: 0.55;
-        cursor: default;
-      }
-      .hint-overlay {
-        position: fixed;
-        inset: 0;
+      /* AI hint bar — sits above the board, never covers it */
+      .hint-bar {
         display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(6, 10, 22, 0.72);
-        z-index: 20;
-        padding: 20px;
+        align-items: flex-start;
+        gap: 8px;
+        width: var(--board);
+        max-width: 94vw;
+        padding: 8px 14px;
+        background: rgba(20, 30, 54, 0.7);
+        border: 1px solid rgba(255, 209, 102, 0.3);
+        border-radius: 10px;
+        font-size: 13.5px;
+        line-height: 1.4;
+        color: #dce7ff;
+        cursor: move; /* drag the bar to reposition it */
+        touch-action: none;
       }
-      .hint-overlay[hidden] {
+      .hint-bar[hidden] {
         display: none;
       }
-      .hint-card {
-        background: #141f38;
-        border: 1px solid rgba(255, 209, 102, 0.3);
-        border-radius: 14px;
-        padding: 20px 22px;
-        max-width: 360px;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-        text-align: center;
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+      .hint-bar.dragging {
+        opacity: 0.95;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
       }
-      .hint-title {
-        font-size: 18px;
-        font-weight: 700;
-        color: #ffd166;
+      .hint-grip {
+        flex: none;
+        color: #7d8bab;
+        letter-spacing: -1px;
       }
-      .hint-body {
-        font-size: 15px;
-        line-height: 1.5;
-        color: #dce7ff;
-        min-height: 42px;
+      .hint-bar-icon {
+        flex: none;
+      }
+      .hint-bar-text {
+        cursor: text;
         user-select: text;
         -webkit-user-select: text;
       }
-      .hint-body.loading {
+      .hint-bar-text.loading,
+      .hint-bar-text.muted {
         color: #8ea3c8;
       }
 
@@ -277,6 +268,9 @@
         :root {
           --board: min(94vw, calc(100dvh - 315px), 460px);
         }
+        body.hints-on {
+          --board: min(94vw, calc(100dvh - 385px), 460px);
+        }
         body {
           padding: 12px 10px 20px;
           gap: 10px;
@@ -302,7 +296,7 @@
       </div>
 
       <div class="group">
-        <span class="label">Hints</span>
+        <span class="label">AI Hint</span>
         <div class="seg" id="hints">
           <button data-hints="on">On</button>
           <button data-hints="off" class="active">Off</button>
@@ -314,19 +308,16 @@
       <span class="badge">⏱ <span id="timer">0:00</span></span>
       <span class="badge status" id="status-text">0 / 81</span>
       <button id="btn-new" class="ctrl-btn">New Puzzle</button>
-      <button id="btn-hint" class="ctrl-btn hint" hidden>💡 Hint</button>
+    </div>
+
+    <div class="hint-bar" id="hint-bar" hidden>
+      <span class="hint-grip" aria-hidden="true">⠿</span>
+      <span class="hint-bar-icon">💡</span>
+      <span class="hint-bar-text" id="hint-text"></span>
     </div>
 
     <div class="board" id="board"></div>
     <div class="pad" id="pad"></div>
-
-    <div class="hint-overlay" id="hint-overlay" hidden>
-      <div class="hint-card">
-        <div class="hint-title">💡 Hint</div>
-        <div class="hint-body" id="hint-body"></div>
-        <button id="hint-close" class="ctrl-btn">Got it</button>
-      </div>
-    </div>
 
     <script type="module" src="/src/main.ts"></script>
   </body>
