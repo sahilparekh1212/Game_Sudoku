@@ -13,10 +13,6 @@
         /* Board fits the viewport minus the header / toolbar / pad chrome. */
         --board: min(92vw, calc(100dvh - 345px), 460px);
       }
-      /* Reserve extra height for the hint bar so nothing gets clipped */
-      body.hints-on {
-        --board: min(92vw, calc(100dvh - 425px), 460px);
-      }
       * {
         box-sizing: border-box;
       }
@@ -68,31 +64,32 @@
         letter-spacing: 1.4px;
         color: #7d8bab;
       }
-      .seg {
-        display: inline-flex;
-        background: #101a30;
-        border-radius: 8px;
-        padding: 3px;
-        gap: 3px;
-      }
-      .seg button {
+      .dd {
         appearance: none;
-        border: none;
-        background: transparent;
-        color: #aebbd6;
+        -webkit-appearance: none;
+        background-color: #101a30;
+        color: #e8eefc;
+        border: 1px solid rgba(159, 208, 255, 0.2);
+        border-radius: 8px;
+        padding: 6px 30px 6px 12px;
         font: inherit;
         font-size: 13px;
-        padding: 5px 13px;
-        border-radius: 6px;
         cursor: pointer;
-        transition: background 0.12s, color 0.12s;
+        min-width: 82px;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2.5 4.5l3.5 3.5 3.5-3.5' fill='none' stroke='%23aebbd6' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
       }
-      .seg button:hover {
+      .dd:hover {
+        border-color: rgba(159, 208, 255, 0.4);
+      }
+      .dd:focus {
+        outline: none;
+        border-color: #3a6df0;
+      }
+      .dd option {
+        background: #101a30;
         color: #e8eefc;
-      }
-      .seg button.active {
-        background: #3a6df0;
-        color: #ffffff;
       }
 
       .toolbar {
@@ -268,9 +265,6 @@
         :root {
           --board: min(94vw, calc(100dvh - 315px), 460px);
         }
-        body.hints-on {
-          --board: min(94vw, calc(100dvh - 385px), 460px);
-        }
         body {
           padding: 12px 10px 20px;
           gap: 10px;
@@ -288,19 +282,19 @@
     <div class="panel">
       <div class="group">
         <span class="label">Difficulty</span>
-        <div class="seg" id="difficulty">
-          <button data-diff="easy" class="active">Easy</button>
-          <button data-diff="medium">Medium</button>
-          <button data-diff="hard">Hard</button>
-        </div>
+        <select class="dd" id="difficulty">
+          <option value="easy" selected>Easy</option>
+          <option value="medium">Medium</option>
+          <option value="hard">Hard</option>
+        </select>
       </div>
 
       <div class="group">
         <span class="label">AI Hint</span>
-        <div class="seg" id="hints">
-          <button data-hints="on">On</button>
-          <button data-hints="off" class="active">Off</button>
-        </div>
+        <select class="dd" id="hints">
+          <option value="on">On</option>
+          <option value="off" selected>Off</option>
+        </select>
       </div>
     </div>
 
@@ -310,14 +304,14 @@
       <button id="btn-new" class="ctrl-btn">New Puzzle</button>
     </div>
 
+    <div class="board" id="board"></div>
+    <div class="pad" id="pad"></div>
+
     <div class="hint-bar" id="hint-bar" hidden>
       <span class="hint-grip" aria-hidden="true">⠿</span>
       <span class="hint-bar-icon">💡</span>
       <span class="hint-bar-text" id="hint-text"></span>
     </div>
-
-    <div class="board" id="board"></div>
-    <div class="pad" id="pad"></div>
 
     <script type="module" src="/src/main.ts"></script>
   </body>

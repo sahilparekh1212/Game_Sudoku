@@ -167,7 +167,6 @@ function setHint(text: string, loading = false, muted = false): void {
  * per step, fetches are debounced against fast typing, and stale replies drop.
  */
 function updateHintBar(): void {
-  document.body.classList.toggle("hints-on", hintsEnabled);
   hintBar.hidden = !hintsEnabled;
   if (!hintsEnabled) {
     hintKey = "";
@@ -261,14 +260,11 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
-const diffSeg = document.getElementById("difficulty") as HTMLElement;
-diffSeg.addEventListener("click", (e) => {
-  const btn = (e.target as HTMLElement).closest("button");
-  if (!btn || !diffSeg.contains(btn)) return;
-  for (const child of Array.from(diffSeg.children)) child.classList.toggle("active", child === btn);
-  game.setDifficulty(btn.dataset.diff as Difficulty);
+const diffSel = document.getElementById("difficulty") as HTMLSelectElement;
+diffSel.addEventListener("change", () => {
+  game.setDifficulty(diffSel.value as Difficulty);
   newGame();
-  (document.activeElement as HTMLElement | null)?.blur();
+  diffSel.blur();
 });
 
 document.getElementById("btn-new")?.addEventListener("click", () => {
@@ -276,21 +272,15 @@ document.getElementById("btn-new")?.addEventListener("click", () => {
   (document.activeElement as HTMLElement | null)?.blur();
 });
 
-const hintsSeg = document.getElementById("hints") as HTMLElement;
-hintsSeg.addEventListener("click", (e) => {
-  const btn = (e.target as HTMLElement).closest("button");
-  if (!btn || !hintsSeg.contains(btn)) return;
-  for (const child of Array.from(hintsSeg.children)) child.classList.toggle("active", child === btn);
-  hintsEnabled = btn.dataset.hints === "on";
+const hintsSel = document.getElementById("hints") as HTMLSelectElement;
+hintsSel.addEventListener("change", () => {
+  hintsEnabled = hintsSel.value === "on";
   localStorage.setItem("sudoku:hints", hintsEnabled ? "on" : "off");
   updateHintBar();
-  (document.activeElement as HTMLElement | null)?.blur();
+  hintsSel.blur();
 });
 
-// Reflect the persisted hints toggle in its segmented control on load.
-for (const child of Array.from(hintsSeg.children)) {
-  const el = child as HTMLElement;
-  el.classList.toggle("active", el.dataset.hints === (hintsEnabled ? "on" : "off"));
-}
+// Reflect the persisted hints toggle in its dropdown on load.
+hintsSel.value = hintsEnabled ? "on" : "off";
 
 newGame();
